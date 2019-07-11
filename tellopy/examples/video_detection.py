@@ -6,9 +6,10 @@ import cv2.cv2 as cv2  # for avoidance of pylint error
 import numpy
 import time
 
-import base64
 from dd_client import DD
+from PIL import Image
 import cStringIO
+import base64
 import math
 
 def main():
@@ -38,7 +39,15 @@ def main():
                     frame_skip = frame_skip - 1
                     continue
                 start_time = time.time()
-                image = cv2.cvtColor(numpy.array(frame.to_image()), cv2.COLOR_RGB2BGR)
+                pilImage = frame.to_image()
+                image = cv2.cvtColor(numpy.array(pilImage), cv2.COLOR_RGB2BGR)
+
+                # resize image for detection
+                basewidth = 300
+                wpercent = (basewidth/float(pilImage.size[0]))
+                hsize = int((float(pilImage.size[1])*float(wpercent)))
+                detectionImage = pilImage.resize((basewidth,hsize), Image.ANTIALIAS)
+
 
                 # Create a base64 string from the image buffer
                 buffer = cStringIO.StringIO()
@@ -47,7 +56,7 @@ def main():
                 data = [img_str]
 
                 parameters_input = {}
-                parameters_mllib = {}
+                parameters_mllib = {"gpu": True}
                 parameters_output = {"bbox": True, "confidence_threshold":0.3}
 
                 # Make predict request on a service
